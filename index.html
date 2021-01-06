@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Globe</title>
+        <style>
+            html { height: 100%; }
+            body { margin: 0; overflow: hidden; height: 100%; }
+            #viewerDiv { margin: auto; height: 100%; width: 100%; padding: 0; }
+            canvas { display: block }
+        </style>
+        <link rel="stylesheet" type="text/css" href="examples/css/example.css">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv" class="viewer"></div>
+        <script src="examples/js/GUI/GuiTools.js"></script>
+        <script src="dist/itowns.js"></script>
+        <script src="dist/debug.js"></script>
+        <script type="text/javascript">
+            /* afficher Dalle Photo */
+            var viewerDiv = document.getElementById('viewerDiv');
+            var placement = {
+                coord: new itowns.Coordinates('EPSG:4326', 4.8589231, 45.7621631),
+                range: 1E3,
+                tilt: 22,
+                heading: 180
+            };
+            var view = new itowns.GlobeView(viewerDiv, placement);
+            
+            var colorSource = new itowns.WMTSSource({
+                url: 'http://wxs.ign.fr/3ht7xcw6f7nciopo16etuqp2/geoportail/wmts',
+                crs: 'EPSG:3857',
+                name: 'ORTHOIMAGERY.ORTHOPHOTOS',
+                tileMatrixSet: 'PM',
+                format: 'image/jpeg'
+            });
+            
+            var colorLayer = new itowns.ColorLayer('Ortho', {
+                source: colorSource,
+            });
+            
+            view.addLayer(colorLayer);
+            
+            var elevationSource = new itowns.WMTSSource({
+                url: 'http://wxs.ign.fr/3ht7xcw6f7nciopo16etuqp2/geoportail/wmts',
+                crs: 'EPSG:4326',
+                name: 'ELEVATION.ELEVATIONGRIDCOVERAGE.HIGHRES',
+                tileMatrixSet: 'WGS84G',
+                format: 'image/x-bil;bits=32',
+                tileMatrixSetLimits: {
+                    11: {
+                        minTileRow: 442,
+                        maxTileRow: 1267,
+                        minTileCol: 1344,
+                        maxTileCol: 2683
+                    },
+                    12: {
+                        minTileRow: 885,
+                        maxTileRow: 2343,
+                        minTileCol: 3978,
+                        maxTileCol: 5126
+                    },
+                    13: {
+                        minTileRow: 1770,
+                        maxTileRow: 4687,
+                        minTileCol: 7957,
+                        maxTileCol: 10253
+                    },
+                    14: {
+                        minTileRow: 3540,
+                        maxTileRow: 9375,
+                        minTileCol: 15914,
+                        maxTileCol: 20507
+                    }
+                }
+            });
+
+            var elevationLayer = new itowns.ElevationLayer('MNT_WORLD', {
+                source: elevationSource,
+            });
+
+            view.addLayer(elevationLayer);
+
+            function setAltitude(properties) {
+                return -properties.hauteur;
+            }
+
+            function setExtrusion(properties) {
+                return properties.hauteur;
+            }
+
+            function setColor(properties) {
+                return new itowns.THREE.Color(0xaaaaaa);
+            }
+
+            var geometrySource = new itowns.WFSSource({
+                url: 'http://wxs.ign.fr/3ht7xcw6f7nciopo16etuqp2/geoportail/wfs?',
+                typeName: 'BDTOPO_BDD_WLD_WGS84G:bati_indifferencie',
+                crs: 'EPSG:4326',
+            });
+
+            var geometryLayer = new itowns.GeometryLayer('Buildings', new itowns.THREE.Group(), {
+                source: geometrySource,
+                update: itowns.FeatureProcessing.update,
+                convert: itowns.Feature2Mesh.convert({
+                    altitude: setAltitude,
+                    extrude: setExtrusion,
+                    color: setColor
+                }),
+                zoom: { min: 14 },
+            });
+
+            view.addLayer(geometryLayer);
+        </script>
+    </body>
+</html>
