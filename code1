@@ -1,0 +1,19 @@
+function setAltitude(properties){
+    console.log(properties);
+}
+
+var geometrySource = new itowns.WFSSource({
+    url: 'http://wxs.ign.fr/3ht7xcw6f7nciopo16etuqp2/geoportail/wfs?',
+    typeName: 'BDTOPO_BDD_WLD_WGS84G:bati_indifferencie',
+    crs: 'EPSG:4326',
+});
+
+var geometryLayer = new itowns.GeometryLayer('Buildings', new itowns.THREE.Group(), {
+    source: geometrySource,
+    update: itowns.FeatureProcessing.update,
+    convert: itowns.Feature2Mesh.convert({
+        altitude: setAltitude
+    }),
+    zoom: { min: 14 },
+})
+view.addLayer(geometryLayer);
